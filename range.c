@@ -1468,7 +1468,9 @@ failure:
 static void game_changed_state(game_ui *ui, game_state *oldstate,
                                game_state *newstate)
 {
-
+#ifdef ANDROID
+    if (newstate->was_solved && ! newstate->has_cheated && oldstate && ! oldstate->was_solved) android_completed();
+#endif
 }
 
 static float game_anim_length(game_state *oldstate, game_state *newstate,
