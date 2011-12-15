@@ -15,6 +15,7 @@ import java.util.StringTokenizer;
 import name.boyle.chris.sgtpuzzles.compat.ActionBarCompat;
 import name.boyle.chris.sgtpuzzles.compat.PrefsSaver;
 
+import android.view.Window;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -221,6 +222,9 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 		prefsSaver = PrefsSaver.get(this);
 		games = getResources().getStringArray(R.array.games);
 		gameTypes = new LinkedHashMap<Integer,String>();
+
+		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
+		requestWindowFeature(Window.FEATURE_NO_TITLE);
 
 		applyFullscreen(false);  // must precede super.onCreate and setContentView
 		super.onCreate(savedInstanceState);
@@ -688,6 +692,7 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 	void setStatus(final String status)
 	{
 		runOnUiThread(new Runnable(){public void run(){
+			statusBar.setTextColor(Color.BLACK);
 			statusBar.setText(status.length() == 0 ? " " : status);
 		}});
 	}
