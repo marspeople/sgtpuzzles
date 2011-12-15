@@ -14,7 +14,11 @@
 #define PREFERRED_TILE_SIZE 48
 #define TILE_SIZE (ds->tilesize)
 #define BLITTER_SIZE TILE_SIZE
-#define BORDER    (TILE_SIZE / 2)
+#ifdef SMALL_SCREEN
+#define BORDER (TILE_SIZE / 4)
+#else
+#define BORDER (TILE_SIZE / 2)
+#endif
 
 #define COORD(x)  ( (x) * TILE_SIZE + BORDER )
 #define FROMCOORD(x)  ( ((x) - BORDER + TILE_SIZE) / TILE_SIZE - 1 )

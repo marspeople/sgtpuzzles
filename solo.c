@@ -109,7 +109,11 @@ typedef unsigned char digit;
 
 #define PREFERRED_TILE_SIZE 48
 #define TILE_SIZE (ds->tilesize)
+#ifdef SMALL_SCREEN
+#define BORDER (TILE_SIZE / 4)
+#else
 #define BORDER (TILE_SIZE / 2)
+#endif
 #define GRIDEXTRA max((TILE_SIZE / 32),1)
 
 #define FLASH_TIME 0.4F
