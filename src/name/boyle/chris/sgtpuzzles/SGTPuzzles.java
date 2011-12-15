@@ -766,6 +766,7 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 			et.setText(value);
 			TextView tv = new TextView(SGTPuzzles.this);
 			tv.setText(name);
+			tv.setTextColor(Color.GRAY);
 			tv.setPadding(2,2,2,2);
 			TableRow tr = new TableRow(SGTPuzzles.this);
 			tr.addView(tv);
@@ -777,6 +778,7 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 			CheckBox c = new CheckBox(SGTPuzzles.this);
 			c.setId(id);
 			c.setText(name);
+			c.setTextColor(Color.GRAY);
 			c.setChecked(selection != 0);
 			dialogLayout.addView(c);
 			break; }
@@ -794,6 +796,7 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 			s.setSelection(selection);
 			TextView tv = new TextView(SGTPuzzles.this);
 			tv.setText(name);
+			tv.setTextColor(Color.GRAY);
 			TableRow tr = new TableRow(SGTPuzzles.this);
 			tr.addView(tv);
 			tr.addView(s);
