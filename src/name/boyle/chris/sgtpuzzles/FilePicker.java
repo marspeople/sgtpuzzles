@@ -48,17 +48,23 @@ class FilePicker extends Dialog
 		}
 	}
 
-	void load(final File f) throws IOException
+	String loadState(final File f) throws IOException
 	{
 		byte[] b = new byte[(int)f.length()];
 		new RandomAccessFile(f,"r").readFully(b);
+		return new String(b);
+	}
+
+	void load(final File f) throws IOException
+	{
 		Intent i = new Intent(getContext(), SGTPuzzles.class);
-		i.putExtra("game", new String(b));
+		i.putExtra("game", loadState(f));
 		getContext().startActivity(i);
 		dismissAll();
 	}
 
-	void save(final File f, Boolean force)
+	void save(final File f, Boolean force) { this.save(f, force, false); }
+	void save(final File f, Boolean force, final Boolean quiet)
 	{
 		if (! force && f.exists()) {
 			AlertDialog.Builder b = new AlertDialog.Builder(getContext())
@@ -68,7 +74,7 @@ class FilePicker extends Dialog
 			b.setPositiveButton(android.R.string.yes, new OnClickListener(){ public void onClick(DialogInterface d, int which) {
 				try {
 					f.delete();
-					save(f, true);
+					save(f, true, quiet);
 				} catch (Exception e) {
 					Toast.makeText(getContext(), e.toString(), Toast.LENGTH_LONG).show();
 				}
@@ -86,15 +92,20 @@ class FilePicker extends Dialog
 			FileWriter w = new FileWriter(f);
 			w.write(s,0,s.length());
 			w.close();
-			Toast.makeText(getContext(), MessageFormat.format(
-					getContext().getString(R.string.file_saved),new Object[]{f.getPath()}),
-					Toast.LENGTH_LONG).show();
+			if (!quiet)
+				Toast.makeText(getContext(), MessageFormat.format(
+						getContext().getString(R.string.file_saved),new Object[]{f.getPath()}),
+						Toast.LENGTH_LONG).show();
 			dismissAll();
 		} catch (Exception e) {
 			Toast.makeText(getContext(), e.toString(), Toast.LENGTH_LONG).show();
 		}
 	}
 
+	FilePicker(Activity activity) {
+		super(activity, android.R.style.Theme);
+		this.activity = activity;
+	}
 	FilePicker(Activity activity, final File path, final boolean isSave) { this(activity, path, isSave, null); }
 	FilePicker(Activity activity, final File path, final boolean isSave, FilePicker parent)
 	{

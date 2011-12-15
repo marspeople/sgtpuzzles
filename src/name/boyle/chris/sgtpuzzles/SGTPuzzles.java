@@ -271,7 +271,10 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 			String g = u.getSchemeSpecificPart();
 			for (int i=0; i<games.length; i++) {
 				if (games[i].equals(g)) {
-					startGame(i,null);
+					String state = loadGameState(g);
+
+					if (state != null) startGame(-1,state);
+					else startGame(i,null);
 					return;
 				}
 			}
@@ -343,8 +346,35 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 		d.show();
 	}
 
+	File getStateFile(String title) {
+		File dir = new File(storageDir + "/sgtpuzzles");
+		dir.mkdirs();
+		return new File(dir, title + ".state");
+	}
+
+	void saveGameState(String title) {
+		if (gameRunning) {
+			FilePicker fp = new FilePicker(this);
+			fp.save(getStateFile(title), true, true);
+		}
+	}
+
+	String loadGameState(String gameId) {
+		int nameId = getResources().getIdentifier("name_"+gameId, "string", getPackageName());
+		String name = getString(nameId);
+		File sfile = getStateFile(name);
+		try {
+			FilePicker fp = new FilePicker(this);
+			if (sfile.exists())
+				return fp.loadState(sfile);
+		} catch (Exception e) {}
+
+		return null;
+	}
+
 	void startChooser()
 	{
+		saveGameState(getTitle().toString());
 		startActivity(new Intent(this, GameChooser.class));
 	}
 
@@ -452,6 +482,7 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 
 	void quit(boolean fromDestroy)
 	{
+		saveGameState(getTitle().toString());
 		stopNative();
 		if( ! fromDestroy ) finish();
 	}
