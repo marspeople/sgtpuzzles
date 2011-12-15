@@ -3544,10 +3544,10 @@ hitedge:
 	    button_char = 'y';
 	    break;
 	  case LINE_YES:
-#ifdef STYLUS_BASED
-	    button_char = 'n';
-	    break;
-#endif
+// #ifdef STYLUS_BASED
+	    // button_char = 'n';
+	    // break;
+// #endif
 	  case LINE_NO:
 	    button_char = 'u';
 	    break;
@@ -3562,10 +3562,10 @@ hitedge:
 	    button_char = 'n';
 	    break;
 	  case LINE_NO:
-#ifdef STYLUS_BASED
-	    button_char = 'y';
-	    break;
-#endif
+// #ifdef STYLUS_BASED
+	    // button_char = 'y';
+	    // break;
+// #endif
 	  case LINE_YES:
 	    button_char = 'u';
 	    break;
@@ -3777,7 +3777,7 @@ static void game_redraw_line(drawing *dr, game_drawstate *ds,
     grid_to_screen(ds, g, e->dot2->x, e->dot2->y, &x2, &y2);
 
     if (line_colour == COL_FAINT) {
-	static int draw_faint_lines = -1;
+	static int draw_faint_lines = 0;
 	if (draw_faint_lines < 0) {
 	    char *env = getenv("LOOPY_FAINT_LINES");
 	    draw_faint_lines = (!env || (env[0] == 'y' ||
@@ -3786,7 +3786,7 @@ static void game_redraw_line(drawing *dr, game_drawstate *ds,
 	if (draw_faint_lines)
 	    draw_line(dr, x1, y1, x2, y2, line_colour);
     } else {
-	draw_thick_line(dr, 3.0,
+	draw_thick_line(dr, 4.0,
 			x1 + 0.5, y1 + 0.5,
 			x2 + 0.5, y2 + 0.5,
 			line_colour);
