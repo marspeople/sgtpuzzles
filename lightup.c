@@ -29,7 +29,11 @@ int verbose = 0;
 
 #define PREFERRED_TILE_SIZE 32
 #define TILE_SIZE       (ds->tilesize)
-#define BORDER          (TILE_SIZE / 2)
+#ifdef SMALL_SCREEN
+#define BORDER (TILE_SIZE / 4)
+#else
+#define BORDER (TILE_SIZE / 2)
+#endif
 #define TILE_RADIUS     (ds->crad)
 
 #define COORD(x)  ( (x) * TILE_SIZE + BORDER )

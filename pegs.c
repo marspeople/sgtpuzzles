@@ -801,7 +801,11 @@ static void game_changed_state(game_ui *ui, game_state *oldstate,
 
 #define PREFERRED_TILE_SIZE 33
 #define TILESIZE (ds->tilesize)
+#ifdef SMALL_SCREEN
+#define BORDER (TILESIZE / 4)
+#else
 #define BORDER (TILESIZE / 2)
+#endif
 
 #define HIGHLIGHT_WIDTH (TILESIZE / 16)
 

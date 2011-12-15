@@ -22,11 +22,16 @@ enum {
     NCOLOURS
 };
 
+#define STYLUS_BASED
+
 #define PREFERRED_TILE_SIZE 24
 #define TILE_SIZE (ds->tilesize)
-#define BORDER (3 * TILE_SIZE / 4)
-#define TLBORDER(d) ( (d) / 5 + 2 )
-#define GUTTER (TILE_SIZE / 2)
+// #define BORDER (3 * TILE_SIZE / 4)
+#define BORDER ( TILE_SIZE / 4)
+// #define TLBORDER(d) ( (d) / 5 + 2 )
+#define TLBORDER(d) ( (d) / 5 )
+// #define GUTTER (TILE_SIZE / 2)
+#define GUTTER 0
 
 #define FROMCOORD(d, x) \
         ( ((x) - (BORDER + GUTTER + TILE_SIZE * TLBORDER(d))) / TILE_SIZE )
@@ -1217,9 +1222,11 @@ static void draw_numbers(drawing *dr, game_drawstate *ds, game_state *state,
 	    sprintf(str, "%d", rowdata[j]);
 	    draw_text(dr, x+TILE_SIZE/2, y+TILE_SIZE/2, FONT_VARIABLE,
 #ifdef ANDROID
-		      TILE_SIZE,
+		      3*TILE_SIZE/4,
+		      // TILE_SIZE,
 #else
-		      TILE_SIZE/2,
+		      // TILE_SIZE/2,
+		      3*TILE_SIZE/4,
 #endif
 		      ALIGN_HCENTRE | ALIGN_VCENTRE, colour, str);
 	}

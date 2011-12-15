@@ -30,7 +30,7 @@ enum {
 #define PREFERRED_TILE_SIZE 20
 #define TILE_SIZE (ds->tilesize)
 #ifdef SMALL_SCREEN
-#define BORDER 8
+#define BORDER 6
 #else
 #define BORDER (TILE_SIZE * 3 / 2)
 #endif

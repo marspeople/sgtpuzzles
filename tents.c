@@ -1470,8 +1470,10 @@ struct game_drawstate {
 
 #define PREFERRED_TILESIZE 32
 #define TILESIZE (ds->tilesize)
-#define TLBORDER (TILESIZE/2)
-#define BRBORDER (TILESIZE*3/2)
+// #define TLBORDER (TILESIZE/2)
+#define TLBORDER (TILESIZE/4)
+// #define BRBORDER (TILESIZE*3/2)
+#define BRBORDER (TILESIZE)
 #define COORD(x)  ( (x) * TILESIZE + TLBORDER )
 #define FROMCOORD(x)  ( ((x) - TLBORDER + TILESIZE) / TILESIZE - 1 )
 
@@ -2489,7 +2491,8 @@ static void int_redraw(drawing *dr, game_drawstate *ds, game_state *oldstate,
 	    draw_rect(dr, COORD(x), COORD(h)+1, TILESIZE, BRBORDER-1,
 		      COL_BACKGROUND);
 	    sprintf(buf, "%d", state->numbers->numbers[x]);
-	    draw_text(dr, COORD(x) + TILESIZE/2, COORD(h+1),
+	    // draw_text(dr, COORD(x) + TILESIZE/2, COORD(h+1),
+	    draw_text(dr, COORD(x) + TILESIZE/2, COORD(h+1) - TLBORDER/2,
 		      FONT_VARIABLE, TILESIZE/2, ALIGN_HCENTRE|ALIGN_VNORMAL,
 		      (errors[w*h+x] ? COL_ERROR : COL_GRID), buf);
 	    draw_update(dr, COORD(x), COORD(h)+1, TILESIZE, BRBORDER-1);
@@ -2503,7 +2506,8 @@ static void int_redraw(drawing *dr, game_drawstate *ds, game_state *oldstate,
 	    draw_rect(dr, COORD(w)+1, COORD(y), BRBORDER-1, TILESIZE,
 		      COL_BACKGROUND);
 	    sprintf(buf, "%d", state->numbers->numbers[w+y]);
-	    draw_text(dr, COORD(w+1), COORD(y) + TILESIZE/2,
+	    // draw_text(dr, COORD(w+1), COORD(y) + TILESIZE/2,
+	    draw_text(dr, COORD(w+1) - TLBORDER, COORD(y) + TILESIZE/2,
 		      FONT_VARIABLE, TILESIZE/2, ALIGN_HRIGHT|ALIGN_VCENTRE,
 		      (errors[w*h+w+y] ? COL_ERROR : COL_GRID), buf);
 	    draw_update(dr, COORD(w)+1, COORD(y), BRBORDER-1, TILESIZE);

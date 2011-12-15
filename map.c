@@ -2343,7 +2343,11 @@ struct game_drawstate {
 #define SHOW_NUMBERS  0x00004000L
 
 #define TILESIZE (ds->tilesize)
+#ifdef SMALL_SCREEN
+#define BORDER (TILESIZE / 2)
+#else
 #define BORDER (TILESIZE)
+#endif
 #define COORD(x)  ( (x) * TILESIZE + BORDER )
 #define FROMCOORD(x)  ( ((x) - BORDER + TILESIZE) / TILESIZE - 1 )
 
