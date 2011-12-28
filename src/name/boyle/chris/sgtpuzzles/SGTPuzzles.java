@@ -40,11 +40,14 @@ import android.preference.PreferenceManager;
 import android.text.InputType;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.SubMenu;
 import android.view.View;
+import android.view.WindowManager;
+import android.view.View.OnClickListener;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.widget.ArrayAdapter;
@@ -66,6 +69,7 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 	static final String INERTIA_FORCE_ARROWS_KEY = "inertiaForceArrows";
 	static final String FULLSCREEN_KEY = "fullscreen";
 	static final String PATTERN_SHOW_LENGTHS_KEY = "patternShowLengths";
+	static final String COMPLETED_PROMPT_KEY = "completedPrompt";
 
 	ProgressDialog progress;
 	TextView statusBar;
@@ -105,6 +109,7 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 	Menu menu;
 	ActionBarCompat actionBarCompat = null;
 	String maybeUndoRedo = "ur";
+	String maybeMenu = "";
 	PrefsSaver prefsSaver;
 
 	enum MsgType { INIT, TIMER, DONE, ABORT };
@@ -294,23 +299,27 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 		super.onCreateOptionsMenu(menu);
 		this.menu = menu;
 		getMenuInflater().inflate(R.menu.main, menu);
-		// TODO: need images for undo/redo in menu for this
-		//menu.findItem(R.id.undo).setVisible(hasActionBar);
-		//menu.findItem(R.id.redo).setVisible(hasActionBar);
+		menu.findItem(R.id.undo).setVisible(actionBarCompat != null);
+		menu.findItem(R.id.redo).setVisible(actionBarCompat != null);
 		return true;
 	}
 
+	Menu hackForSubmenus;
 	@Override
 	public boolean onPrepareOptionsMenu(Menu menu)
 	{
 		super.onPrepareOptionsMenu(menu);
-		if( progress != null ) return false;  // not safe/useful until game is loaded
+		hackForSubmenus = menu;
+		if( progress != null && (actionBarCompat == null || actionBarCompat.hasMenuButton()) ) return false;  // not safe/useful until game is loaded
 		MenuItem item;
 		item = menu.findItem(R.id.solve);
 		item.setEnabled(solveEnabled);
 		if (actionBarCompat != null) item.setVisible(solveEnabled);
-		menu.findItem(R.id.undo).setEnabled(undoEnabled);
-		menu.findItem(R.id.redo).setEnabled(redoEnabled);
+		MenuItem undoItem = menu.findItem(R.id.undo), redoItem = menu.findItem(R.id.redo);
+		undoItem.setEnabled(undoEnabled);
+		redoItem.setEnabled(redoEnabled);
+		undoItem.setIcon(undoEnabled ? R.drawable.sym_keyboard_undo : R.drawable.sym_keyboard_undo_disabled);
+		redoItem.setIcon(redoEnabled ? R.drawable.sym_keyboard_redo : R.drawable.sym_keyboard_redo_disabled);
 		item = menu.findItem(R.id.type);
 		item.setEnabled(! gameTypes.isEmpty() || customVisible);
 		if (actionBarCompat != null) item.setVisible(item.isEnabled());
@@ -378,6 +387,17 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 		startActivity(new Intent(this, GameChooser.class));
 	}
 
+	void startNewGame()
+	{
+		if(! gameRunning || progress != null) return;
+		showProgress( R.string.starting_new );
+		changedState(false, false);
+		(worker = new Thread("newGame") { public void run() {
+			keyEvent(0, 0, 'n');
+			handler.sendEmptyMessage(MsgType.DONE.ordinal());
+		}}).start();
+	}
+
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item)
 	{
@@ -389,13 +409,7 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 			startActivity(new Intent(this, PrefsActivity.class));
 			break;
 		case R.id.newgame:
-			if(! gameRunning || progress != null) break;
-			showProgress( R.string.starting_new );
-			changedState(false, false);
-			(worker = new Thread("newGame") { public void run() {
-				keyEvent(0, 0, 'n');
-				handler.sendEmptyMessage(MsgType.DONE.ordinal());
-			}}).start();
+			startNewGame();
 			break;
 		case R.id.restart:  restartEvent(); break;
 		case R.id.undo:     sendKey(0, 0, 'u'); break;
@@ -527,6 +541,9 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 			customVisible = false;
 			setStatusBarVisibility(false);
 		}
+		if (ActionBarCompat.earlyHasActionBar()) {
+			maybeUndoRedo = "";
+		}
 		setKeys("", SmallKeyboard.ARROWS_LEFT_RIGHT_CLICK);
 		if( typeMenu != null ) for( Integer i : gameTypes.keySet() ) typeMenu.removeItem(i);
 		gameTypes.clear();
@@ -591,6 +608,11 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 	void sendKey(int x, int y, int k)
 	{
 		if(! gameRunning || progress != null) return;
+		if (k == '\f') {
+			// menu button hack
+			openOptionsMenu();
+			return;
+		}
 		keyEvent(x, y, k);
 	}
 
@@ -627,7 +649,7 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 			mainLayout.addView(keyboard, lp);
 		}
 		keyboard.setKeys( (c.hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_NO)
-				? maybeUndoRedo : lastKeys, lastArrowMode);
+				? (maybeUndoRedo+maybeMenu) : lastKeys, lastArrowMode);
 		prevLandscape = landscape;
 		mainLayout.requestLayout();
 	}
@@ -712,6 +734,40 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 					.show();
 		}});
 		// I don't think we need to wait before returning here (and we can't)
+	}
+
+	void completed()
+	{
+		if (! prefs.getBoolean(COMPLETED_PROMPT_KEY, true)) {
+			Toast.makeText(SGTPuzzles.this, getString(R.string.COMPLETED), Toast.LENGTH_SHORT).show();
+			return;
+		}
+		final Dialog d = new Dialog(this, android.R.style.Theme_Panel);
+		WindowManager.LayoutParams lp = d.getWindow().getAttributes();
+		lp.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+		d.getWindow().setAttributes(lp);
+		d.setContentView(R.layout.completed);
+		d.setCanceledOnTouchOutside(true);
+		d.findViewById(R.id.newgame).setOnClickListener(new OnClickListener() {
+			@Override public void onClick(View v) {
+				d.dismiss();
+				startNewGame();
+			}
+		});
+		d.findViewById(R.id.type).setOnClickListener(new OnClickListener() {
+			@Override public void onClick(View v) {
+				d.dismiss();
+				if (hackForSubmenus == null) openOptionsMenu();
+				hackForSubmenus.performIdentifierAction(R.id.type, 0);
+			}
+		});
+		d.findViewById(R.id.other).setOnClickListener(new OnClickListener() {
+			@Override public void onClick(View v) {
+				d.dismiss();
+				startChooser();
+			}
+		});
+		d.show();
 	}
 
 	void requestResize(int x, int y)
@@ -859,7 +915,7 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 	{
 		lastArrowMode = arrowMode;
 		if( keys == null ) return;
-		lastKeys = keys + maybeUndoRedo;
+		lastKeys = keys + maybeUndoRedo + maybeMenu;
 		runOnUiThread(new Runnable(){public void run(){
 			setKeyboardVisibility(getResources().getConfiguration());
 		}});
@@ -937,9 +993,21 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 			keyboard.setUndoRedoEnabled(true, canRedo);
 		}
 		if (actionBarCompat != null && menu != null) {
-			MenuItem mi;
-			mi = menu.findItem(R.id.undo); if (mi != null) mi.setEnabled(undoEnabled);
-			mi = menu.findItem(R.id.redo); if (mi != null) mi.setEnabled(redoEnabled);
+			runOnUiThread(new Runnable() {
+				@Override public void run() {
+					MenuItem mi;
+					mi = menu.findItem(R.id.undo);
+					if (mi != null) {
+						mi.setEnabled(undoEnabled);
+						mi.setIcon(undoEnabled ? R.drawable.sym_keyboard_undo : R.drawable.sym_keyboard_undo_disabled);
+					}
+					mi = menu.findItem(R.id.redo);
+					if (mi != null) {
+						mi.setEnabled(redoEnabled);
+						mi.setIcon(redoEnabled ? R.drawable.sym_keyboard_redo : R.drawable.sym_keyboard_redo_disabled);
+					}
+				}
+			});
 		}
 	}
 
