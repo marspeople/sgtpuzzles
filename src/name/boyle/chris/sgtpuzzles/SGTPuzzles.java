@@ -108,7 +108,7 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 	String[] games;
 	Menu menu;
 	ActionBarCompat actionBarCompat = null;
-	String maybeUndoRedo = "ur";
+	String maybeUndoRedo = "urs";
 	String maybeMenu = "";
 	PrefsSaver prefsSaver;
 
@@ -613,7 +613,16 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 			openOptionsMenu();
 			return;
 		}
+		if (k == 's') {
+			gameView.invertKey = ! gameView.invertKey;
+			keyboard.setShiftEnabled(gameView.invertKey);
+			return;
+		}
 		keyEvent(x, y, k);
+	}
+
+	boolean getInvertKey() {
+		return gameView.invertKey;
 	}
 
 	boolean prevLandscape = false;

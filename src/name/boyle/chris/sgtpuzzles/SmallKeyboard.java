@@ -20,6 +20,7 @@ public class SmallKeyboard extends KeyboardView implements KeyboardView.OnKeyboa
 	static final int KEYSP = 44;  // dip
 	SGTPuzzles parent;
 	boolean undoEnabled = false, redoEnabled = false;
+	boolean shiftEnabled = false;
 	public static final int NO_ARROWS = 0,  // untangle
 			ARROWS_LEFT_RIGHT_CLICK = 1,  // unless phone has a d-pad (most games)
 			ARROWS_DIAGONALS = 2;  // Inertia
@@ -40,6 +41,7 @@ public class SmallKeyboard extends KeyboardView implements KeyboardView.OnKeyboa
 		Context context;
 		List<Key> mKeys;
 		int undoKey = -1, redoKey = -1;
+		int shiftKey = -1;
 		boolean initDone = false;
 		public KeyboardModel(Context context, CharSequence characters,
 				int arrowMode, boolean columnMajor, int maxPx,
@@ -146,6 +148,11 @@ public class SmallKeyboard extends KeyboardView implements KeyboardView.OnKeyboa
 						redoKey = mKeys.size() - 1;
 						key.repeatable = true;
 						setUndoRedoEnabled(true, redoEnabled);
+						break;
+					case 's':
+						shiftKey = mKeys.size() - 1;
+						key.repeatable = true;
+						setShiftEnabled(shiftEnabled);
 						break;
 					case '\b':
 						key.icon = context.getResources().getDrawable(
@@ -296,6 +303,26 @@ public class SmallKeyboard extends KeyboardView implements KeyboardView.OnKeyboa
 			}
 			initDone = true;
 		}
+		void setShiftEnabled(boolean enabled)
+		{
+			int i = shiftKey;
+			if (i < 0) return;
+			DKey k = (DKey)mKeys.get(i);
+			k.icon = context.getResources().getDrawable(
+					enabled ? R.drawable.sym_keyboard_shift
+							: R.drawable.sym_keyboard_shift_disabled);
+			k.enabled = true;
+			// Ugly hack for 1.5 compatibility: invalidateKey() is 1.6 and
+			// invalidate() doesn't work on KeyboardView, so try to change
+			// shift state (and claim, when asked below, that everything
+			// needs a redraw).
+			if (initDone) {
+				SmallKeyboard.this.parent.runOnUiThread(new Runnable(){public void run(){
+					SmallKeyboard.this.setShifted(false);
+				}});
+			}
+		}
+
 		void setUndoRedoEnabled( boolean redo, boolean enabled )
 		{
 			int i = redo ? redoKey : undoKey;
@@ -352,7 +379,7 @@ public class SmallKeyboard extends KeyboardView implements KeyboardView.OnKeyboa
 		parent = isInEditMode() ? null : (SGTPuzzles)c;
 		setBackgroundColor( Color.BLACK );
 		setOnKeyboardActionListener(this);
-		if (isInEditMode()) setKeys("123456\bur", 1);
+		if (isInEditMode()) setKeys("123456\burs", 1);
 	}
 
 	/** Horrible hack for edit mode... */
@@ -405,6 +432,14 @@ public class SmallKeyboard extends KeyboardView implements KeyboardView.OnKeyboa
 		KeyboardModel m = (KeyboardModel)getKeyboard();
 		if (m == null) return;
 		m.setUndoRedoEnabled(redo,enabled);
+	}
+
+	void setShiftEnabled(boolean enabled)
+	{
+		shiftEnabled = enabled;
+		KeyboardModel m = (KeyboardModel)getKeyboard();
+		if (m == null) return;
+		m.setShiftEnabled(enabled);
 	}
 
 	public void swipeUp() {}

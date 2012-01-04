@@ -39,6 +39,8 @@ public class GameView extends View
 	int keysHandled = 0;  // debug
 	static final char[] INTERESTING_CHARS = "0123456789abcdefghijklqrsux".toCharArray();
 
+	public boolean invertKey = false;
+
 	public GameView(Context context, AttributeSet attrs)
 	{
 		super(context, attrs);
@@ -60,6 +62,10 @@ public class GameView extends View
 		}
 	};
 
+	public void toogleInvertKey() {
+		invertKey = ! invertKey;
+	}
+
 	@Override
 	public boolean onTouchEvent(MotionEvent event)
 	{
@@ -68,7 +74,7 @@ public class GameView extends View
 		case MotionEvent.ACTION_DOWN:
 			int meta = event.getMetaState();
 			button = ( meta & KeyEvent.META_ALT_ON ) > 0 ? SGTPuzzles.MIDDLE_BUTTON :
-				( meta & KeyEvent.META_SHIFT_ON ) > 0  ? SGTPuzzles.RIGHT_BUTTON :
+				(( meta & KeyEvent.META_SHIFT_ON ) > 0) != invertKey  ? SGTPuzzles.RIGHT_BUTTON :
 				SGTPuzzles.LEFT_BUTTON;
 			startX = event.getX();
 			startY = event.getY();
