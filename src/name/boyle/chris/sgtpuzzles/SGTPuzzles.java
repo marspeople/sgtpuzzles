@@ -68,6 +68,8 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 	static final String ARROW_KEYS_KEY = "arrowKeys";
 	static final String INERTIA_FORCE_ARROWS_KEY = "inertiaForceArrows";
 	static final String FULLSCREEN_KEY = "fullscreen";
+	static final String STAY_AWAKE_KEY = "stayAwake";
+	static final String UNDO_REDO_KBD_KEY = "undoRedoKbd";
 	static final String PATTERN_SHOW_LENGTHS_KEY = "patternShowLengths";
 	static final String COMPLETED_PROMPT_KEY = "completedPrompt";
 
@@ -108,6 +110,8 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 	String[] games;
 	Menu menu;
 	ActionBarCompat actionBarCompat = null;
+	int actionBarHomeId = -1;
+	boolean homeAsUpNoticeable = false;
 	String maybeUndoRedo = "urs";
 	String maybeMenu = "";
 	PrefsSaver prefsSaver;
@@ -127,8 +131,11 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 				}
 				// set ActionBar icon to the one for this puzzle
 				if( msg.obj != null && actionBarCompat != null ) {
-					actionBarCompat.setIcon(getResources().getIdentifier(
-							(String)msg.obj, "drawable", getPackageName()));
+					int iconId = getResources().getIdentifier(
+							(String)msg.obj, "drawable", getPackageName());
+					homeAsUpNoticeable = actionBarCompat.setIconAsShortcut(
+							iconId > 0 ? iconId : R.drawable.icon);
+					if (menu != null) menu.findItem(R.id.other).setVisible(! homeAsUpNoticeable);
 				}
 				dismissProgress();
 				if( menu != null ) onPrepareOptionsMenu(menu);
@@ -232,6 +239,7 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 
 		applyFullscreen(false);  // must precede super.onCreate and setContentView
+		applyStayAwake();
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
 		mainLayout = (RelativeLayout)findViewById(R.id.mainLayout);
@@ -239,6 +247,9 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 		gameView = (GameView)findViewById(R.id.game);
 		keyboard = (SmallKeyboard)findViewById(R.id.keyboard);
 		actionBarCompat = ActionBarCompat.get(this);
+		try {
+			actionBarHomeId = android.R.id.class.getField("home").getInt(null);
+		} catch (Exception e) {}
 		setDefaultKeyMode(DEFAULT_KEYS_SHORTCUT);
 		gameView.requestFocus();
 		onNewIntent(getIntent());
@@ -274,6 +285,7 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 			return;
 		} else if (u != null) {
 			String g = u.getSchemeSpecificPart();
+			if (games.length < 2) games = getResources().getStringArray(R.array.games);
 			for (int i=0; i<games.length; i++) {
 				if (games[i].equals(g)) {
 					String state = loadGameState(g);
@@ -283,6 +295,7 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 					return;
 				}
 			}
+			Log.e(TAG, "Unhandled URL! \""+u+"\" -> g = \""+g+"\", games = "+games);
 			// TODO! Other URLs, including game states...
 		}
 		if( state.contains("savedGame") && state.getString("savedGame","").length() > 0 ) {
@@ -299,8 +312,10 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 		super.onCreateOptionsMenu(menu);
 		this.menu = menu;
 		getMenuInflater().inflate(R.menu.main, menu);
-		menu.findItem(R.id.undo).setVisible(actionBarCompat != null);
-		menu.findItem(R.id.redo).setVisible(actionBarCompat != null);
+		boolean undoRedoKbd = prefs.getBoolean(UNDO_REDO_KBD_KEY, false);
+		menu.findItem(R.id.undo).setVisible(actionBarCompat != null && ! undoRedoKbd);
+		menu.findItem(R.id.redo).setVisible(actionBarCompat != null && ! undoRedoKbd);
+		menu.findItem(R.id.other).setVisible(! homeAsUpNoticeable);
 		return true;
 	}
 
@@ -401,7 +416,9 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item)
 	{
-		switch(item.getItemId()) {
+		int itemId = item.getItemId();
+		if (itemId == actionBarHomeId) itemId = R.id.other;
+		switch(itemId) {
 		case R.id.other:
 			startChooser();
 			break;
@@ -541,7 +558,8 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 			customVisible = false;
 			setStatusBarVisibility(false);
 		}
-		if (ActionBarCompat.earlyHasActionBar()) {
+		if (ActionBarCompat.earlyHasActionBar()
+				&& ! prefs.getBoolean(UNDO_REDO_KBD_KEY, false)) {
 			maybeUndoRedo = "";
 		}
 		setKeys("", SmallKeyboard.ARROWS_LEFT_RIGHT_CLICK);
@@ -937,6 +955,8 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 			setKeyboardVisibility(getResources().getConfiguration());
 		} else if (key.equals(FULLSCREEN_KEY)) {
 			applyFullscreen(true);  // = already started
+		} else if (key.equals(STAY_AWAKE_KEY)) {
+			applyStayAwake();
 		}
 	}
 
@@ -965,6 +985,15 @@ public class SGTPuzzles extends Activity implements OnSharedPreferenceChangeList
 				// This is the only way to change the theme
 				restartOnResume = true;
 			}  // else leave it as default non-fullscreen
+		}
+	}
+
+	void applyStayAwake()
+	{
+		if (prefs.getBoolean(STAY_AWAKE_KEY, false)) {
+			getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		} else {
+			getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		}
 	}
 
