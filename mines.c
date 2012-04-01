@@ -32,7 +32,7 @@ enum {
 #ifdef SMALL_SCREEN
 #define BORDER 6
 #else
-#define BORDER (TILE_SIZE * 3 / 2)
+#define BORDER (TILE_SIZE)
 #endif
 #define HIGHLIGHT_WIDTH (TILE_SIZE / 10)
 #define OUTER_HIGHLIGHT_WIDTH (BORDER / 10)
